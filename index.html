@@ -1,823 +1,140 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<title>STREAM</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videó Lejátszó</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        .player-container {
+            width: 100%;
+            max-width: 800px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
 
-  :root {
-    --bg: #0d0d0d;
-    --card: #161616;
-    --border: #2a2a2a;
-    --accent: #00ff88;
-    --accent-dim: rgba(0,255,136,0.12);
-    --red: #ff3b3b;
-    --text: #f0f0f0;
-    --muted: #555;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
+        video {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
 
-  html { height: 100%; background: var(--bg); }
-  body {
-    min-height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    overscroll-behavior: none;
-  }
+        .controls {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
 
-  .page { display: none; flex-direction: column; min-height: 100vh; }
-  .page.active { display: flex; }
+        h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            text-align: center;
+        }
 
-  /* ══ HOME ══ */
-  .home-page { background: var(--bg); padding-bottom: calc(var(--safe-bottom) + 100px); }
+        .btn {
+            background-color: #007aff; /* iPhone kék szín */
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            max-width: 200px;
+        }
 
-  .home-header {
-    padding: calc(var(--safe-top) + 24px) 20px 0;
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .logo-mark { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-  .logo-mark span { color: var(--accent); }
-
-  .header-actions { display: flex; gap: 10px; align-items: center; }
-
-  .icon-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.15s;
-    flex-shrink: 0;
-  }
-  .icon-btn:active { transform: scale(0.92); background: #222; }
-
-  .upload-fab {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    border-radius: 50%;
-    width: 40px; height: 40px;
-    font-size: 1.4rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.15s;
-    flex-shrink: 0;
-  }
-  .upload-fab:active { transform: scale(0.92); }
-
-  .sync-bar {
-    margin: 12px 20px 20px;
-    background: var(--accent-dim);
-    border: 1px solid rgba(0,255,136,0.2);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 0.75rem;
-    color: var(--accent);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .sync-bar.hidden { display: none; }
-  .sync-dot {
-    width: 7px; height: 7px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-    flex-shrink: 0;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
-
-  .section-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding: 0 20px;
-    margin-bottom: 12px;
-  }
-
-  .playlist { padding: 0 16px; display: flex; flex-direction: column; gap: 8px; }
-
-  .video-card {
-    background: var(--card);
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-    position: relative;
-    overflow: hidden;
-  }
-  .video-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-  .video-card.active::before { opacity: 1; }
-  .video-card.active { border-color: rgba(0,255,136,0.25); background: #1a1f1c; }
-  .video-card:active { transform: scale(0.985); }
-
-  .card-num {
-    font-family: 'Syne Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--muted);
-    min-width: 20px;
-    text-align: center;
-    flex-shrink: 0;
-  }
-  .video-card.active .card-num { color: var(--accent); }
-
-  .card-thumb {
-    width: 60px; height: 40px;
-    background: #222;
-    border-radius: 8px;
-    flex-shrink: 0;
-    overflow: hidden;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
-  }
-  .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
-  .card-info { flex: 1; min-width: 0; }
-  .card-title {
-    font-size: 0.88rem;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-bottom: 2px;
-  }
-  .card-meta { font-size: 0.68rem; color: var(--muted); font-family: 'Syne Mono', monospace; }
-
-  .card-play {
-    width: 32px; height: 32px;
-    background: var(--accent-dim);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    font-size: 0.75rem;
-    color: var(--accent);
-  }
-  .video-card.active .card-play { background: var(--accent); color: #000; }
-
-  .delete-card-btn {
-    background: none; border: none;
-    color: var(--muted);
-    cursor: pointer; padding: 6px;
-    font-size: 1rem; flex-shrink: 0;
-    transition: color 0.15s;
-  }
-  .delete-card-btn:active { color: var(--red); }
-
-  .empty-state {
-    text-align: center; padding: 60px 40px; color: var(--muted);
-  }
-  .empty-state .icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.3; }
-  .empty-state p { font-size: 0.88rem; line-height: 1.6; }
-  .empty-state strong { color: var(--accent); }
-
-  /* ══ PLAYER ══ */
-  .player-page { background: #000; }
-
-  .player-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: calc(var(--safe-top) + 14px) 18px 12px;
-    background: var(--bg);
-  }
-
-  .back-btn {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    font-size: 1.2rem;
-    line-height: 1;
-  }
-
-  .now-playing-title {
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: var(--accent);
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .ep-counter {
-    font-family: 'Syne Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    background: var(--card);
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-  }
-
-  .video-wrap {
-    width: 100%;
-    background: #000;
-    position: relative;
-  }
-
-  #mainVideo {
-    width: 100%;
-    display: block;
-    max-height: 56vw;
-    background: #000;
-    /* iOS inline playback */
-    -webkit-playsinline: true;
-  }
-
-  .video-placeholder {
-    width: 100%;
-    aspect-ratio: 16/9;
-    background: #111;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    color: var(--muted);
-    font-size: 0.82rem;
-  }
-
-  .player-controls {
-    background: var(--bg);
-    padding: 0 20px calc(var(--safe-bottom) + 16px);
-    flex: 1;
-  }
-
-  /* progress */
-  .progress-area {
-    padding: 16px 0 12px;
-  }
-
-  .progress-track {
-    width: 100%;
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    cursor: pointer;
-    position: relative;
-    margin-bottom: 8px;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    width: 0%;
-    pointer-events: none;
-  }
-
-  .time-row {
-    display: flex;
-    justify-content: space-between;
-    font-family: 'Syne Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--muted);
-  }
-
-  .video-title-big {
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin-bottom: 4px;
-    line-height: 1.3;
-  }
-
-  .video-subtitle {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-bottom: 16px;
-    font-family: 'Syne Mono', monospace;
-  }
-
-  .playback-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    margin-bottom: 20px;
-  }
-
-  .pb-btn {
-    background: none;
-    border: none;
-    color: var(--text);
-    cursor: pointer;
-    padding: 8px;
-    font-size: 1.4rem;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0.7;
-    transition: opacity 0.15s;
-  }
-  .pb-btn:active { opacity: 1; }
-  .pb-btn:disabled { opacity: 0.2; }
-
-  .play-pause-btn {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    font-size: 1.3rem;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.12s;
-  }
-  .play-pause-btn:active { transform: scale(0.93); }
-
-  .nav-btns { display: flex; gap: 10px; }
-
-  .nav-btn {
-    flex: 1;
-    border: none;
-    border-radius: 12px;
-    padding: 14px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    gap: 6px;
-    transition: all 0.15s;
-  }
-  .nav-btn.prev { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-  .nav-btn.next { background: var(--accent); color: #000; flex: 2; }
-  .nav-btn.next:active { transform: scale(0.97); }
-  .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; transform: none !important; }
-
-  /* ══ UPLOAD MODAL ══ */
-  .modal-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 100;
-    align-items: flex-end;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-  .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: #1a1a1a;
-    border-radius: 24px 24px 0 0;
-    width: 100%;
-    padding: 20px 20px calc(var(--safe-bottom) + 28px);
-    border-top: 1px solid var(--border);
-    animation: slideUp 0.25s ease;
-  }
-  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-  .modal-handle {
-    width: 36px; height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 20px;
-  }
-
-  .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
-
-  .field-label {
-    font-size: 0.68rem; font-weight: 700;
-    letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 8px; display: block;
-  }
-
-  .text-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    font-size: 0.9rem;
-    outline: none;
-    transition: border-color 0.15s;
-    -webkit-appearance: none;
-    margin-bottom: 16px;
-  }
-  .text-input:focus { border-color: var(--accent); }
-  .text-input::placeholder { color: var(--muted); }
-
-  /* file picker */
-  .file-pick-area {
-    border: 1.5px dashed var(--border);
-    border-radius: 12px;
-    padding: 24px;
-    text-align: center;
-    cursor: pointer;
-    margin-bottom: 16px;
-    transition: all 0.15s;
-    color: var(--muted);
-    font-size: 0.82rem;
-  }
-  .file-pick-area.has-file { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-  .file-pick-area:active { background: #1f1f1f; }
-
-  #fileInput { display: none; }
-
-  /* progress bar upload */
-  .upload-progress {
-    display: none;
-    margin-bottom: 16px;
-  }
-  .upload-progress.show { display: block; }
-  .upload-progress-track {
-    height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 6px;
-  }
-  .upload-progress-fill {
-    height: 100%; background: var(--accent); border-radius: 2px;
-    width: 0%; transition: width 0.2s;
-  }
-  .upload-progress-label { font-size: 0.72rem; color: var(--muted); font-family: 'Syne Mono', monospace; }
-
-  .modal-actions { display: flex; gap: 10px; }
-  .modal-btn {
-    flex: 1; border: none; border-radius: 12px;
-    padding: 15px;
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem;
-    cursor: pointer; transition: all 0.12s;
-  }
-  .modal-btn.cancel { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
-  .modal-btn.confirm { background: var(--accent); color: #000; }
-  .modal-btn.confirm:disabled { opacity: 0.4; cursor: not-allowed; }
-  .modal-btn.confirm:active:not(:disabled) { transform: scale(0.97); }
-
-  /* toast */
-  .toast {
-    position: fixed;
-    bottom: calc(var(--safe-bottom) + 28px);
-    left: 50%; transform: translateX(-50%) translateY(20px);
-    background: #222;
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    z-index: 200;
-    opacity: 0;
-    transition: all 0.2s;
-    white-space: nowrap;
-    pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-</style>
+        .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
 
-<!-- ══ HOME ══ -->
-<div class="page home-page active" id="homePage">
-  <div class="home-header">
-    <div class="logo-mark">STR<span>E</span>AM</div>
-    <div class="header-actions">
-      <button class="icon-btn" onclick="refreshList()" title="Frissítés">↻</button>
-      <button class="upload-fab" onclick="openModal()" title="Feltöltés">+</button>
-    </div>
-  </div>
-
-  <div class="sync-bar hidden" id="syncBar">
-    <div class="sync-dot"></div>
-    <span id="syncMsg">Frissítés...</span>
-  </div>
-
-  <div class="section-label">Videók</div>
-  <div class="playlist" id="playlist"></div>
-</div>
-
-<!-- ══ PLAYER ══ -->
-<div class="page player-page" id="playerPage">
-  <div class="player-topbar">
-    <button class="back-btn" onclick="goHome()">‹</button>
-    <span class="now-playing-title" id="playerTopTitle">—</span>
-    <span class="ep-counter" id="epCounter">— / —</span>
-  </div>
-
-  <div class="video-wrap">
-    <video id="mainVideo"
-      playsinline
-      webkit-playsinline
-      controls
-      preload="metadata"
-      style="width:100%;display:block;background:#000;max-height:56vw;">
+<div class="player-container">
+    <video id="videoPlayer" controls playsinline autoplay muted>
+        <source id="videoSource" src="" type="video/mp4">
+        A böngésződ nem támogatja a videólejátszást.
     </video>
-  </div>
 
-  <div class="player-controls">
-    <div class="progress-area">
-      <div class="video-title-big" id="playerTitle">—</div>
-      <div class="video-subtitle" id="playerMeta"></div>
+    <div class="controls">
+        <h2 id="videoTitle">Videó betöltése...</h2>
+        <button class="btn" id="nextBtn">Következő rész ➔</button>
     </div>
-
-    <div class="nav-btns">
-      <button class="nav-btn prev" id="prevBtn" onclick="playRelative(-1)">‹ Előző</button>
-      <button class="nav-btn next" id="nextBtn" onclick="playRelative(1)">Következő rész ›</button>
-    </div>
-  </div>
 </div>
-
-<!-- ══ UPLOAD MODAL ══ -->
-<div class="modal-overlay" id="modal" onclick="closeModalOutside(event)">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Videó feltöltése</div>
-
-    <label class="field-label">Cím</label>
-    <input class="text-input" id="inputTitle" type="text" placeholder="pl. 1. epizód" autocomplete="off">
-
-    <label class="field-label">Videó fájl</label>
-    <div class="file-pick-area" id="filePickArea" onclick="document.getElementById('fileInput').click()">
-      <div style="font-size:1.8rem;margin-bottom:6px">🎬</div>
-      <span id="filePickLabel">Kattints a fájl kiválasztásához</span>
-    </div>
-    <input type="file" id="fileInput" accept="video/*,.mkv,.avi,.mov">
-
-    <div class="upload-progress" id="uploadProgress">
-      <div class="upload-progress-track">
-        <div class="upload-progress-fill" id="uploadFill"></div>
-      </div>
-      <div class="upload-progress-label" id="uploadLabel">Feltöltés...</div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="modal-btn cancel" onclick="closeModal()">Mégse</button>
-      <button class="modal-btn confirm" id="uploadBtn" onclick="uploadVideo()">Feltöltés</button>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-const CLOUD = 'dd4ikwgtv';
-const PRESET = 'attackontitan';
-const FOLDER = 'stream_app';
+    // 1. IDE ÍRD BE A VIDEÓID FÁJLNEVEIT ÉS CÍMEIT!
+    const playlist = [
+        { src: "video1.mp4", title: "1. Rész: Bevezetés" },
+        { src: "video2.mp4", title: "2. Rész: A folytatás" },
+        { src: "video3.mp4", title: "3. Rész: Befejezés" }
+    ];
 
-// ── STATE ──
-let videos = [];
-let currentIndex = -1;
-let selectedFile = null;
+    let currentVideoIndex = 0;
 
-// ── CLOUDINARY: fetch video list ──
-async function fetchVideos() {
-  showSync('Videók betöltése...');
-  try {
-    // Use Cloudinary resource listing via search API (unsigned, public)
-    const url = `https://res.cloudinary.com/${CLOUD}/video/list/${FOLDER}.json`;
-    const r = await fetch(url + '?t=' + Date.now());
-    if (!r.ok) throw new Error();
-    const data = await r.json();
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoSource = document.getElementById('videoSource');
+    const videoTitle = document.getElementById('videoTitle');
+    const nextBtn = document.getElementById('nextBtn');
 
-    // sort by created_at ascending
-    const resources = (data.resources || []).sort((a, b) =>
-      (a.created_at || '').localeCompare(b.created_at || '')
-    );
-
-    videos = resources.map((res, i) => ({
-      publicId: res.public_id,
-      title: (res.context?.custom?.caption) || res.public_id.split('/').pop().replace(/_/g,' '),
-      format: res.format,
-      duration: res.duration,
-      url: `https://res.cloudinary.com/${CLOUD}/video/upload/${res.public_id}.${res.format}`
-    }));
-
-    hideSync();
-    renderHome();
-  } catch(e) {
-    hideSync();
-    // fallback to localStorage cache
-    const cached = localStorage.getItem('stream_videos_cache');
-    if (cached) {
-      videos = JSON.parse(cached);
-      renderHome();
-      showToast('Offline mód — régi lista');
-    } else {
-      renderHome();
-    }
-  }
-}
-
-function refreshList() { fetchVideos(); }
-
-// ── RENDER HOME ──
-function renderHome() {
-  localStorage.setItem('stream_videos_cache', JSON.stringify(videos));
-  const pl = document.getElementById('playlist');
-
-  if (!videos.length) {
-    pl.innerHTML = `<div class="empty-state">
-      <div class="icon">🎬</div>
-      <p>Még nincs videó.<br>Nyomd a <strong>+</strong> gombot a feltöltéshez!</p>
-    </div>`;
-    return;
-  }
-
-  pl.innerHTML = videos.map((v, i) => `
-    <div class="video-card ${i === currentIndex ? 'active' : ''}" onclick="playAt(${i})">
-      <span class="card-num">${i+1}</span>
-      <div class="card-thumb">
-        <img src="https://res.cloudinary.com/${CLOUD}/video/upload/so_0,w_120,h_80,c_fill/${v.publicId}.jpg"
-          onerror="this.parentElement.innerHTML='🎥'" alt="" loading="lazy">
-      </div>
-      <div class="card-info">
-        <div class="card-title">${escHtml(v.title)}</div>
-        <div class="card-meta">${v.duration ? fmtDur(v.duration) : ''} · ${(v.format||'').toUpperCase()}</div>
-      </div>
-      <div class="card-play">${i === currentIndex ? '▶' : '▷'}</div>
-    </div>
-  `).join('');
-}
-
-// ── PLAYBACK ──
-function playAt(index) {
-  if (index < 0 || index >= videos.length) return;
-  currentIndex = index;
-  const v = videos[index];
-
-  document.getElementById('homePage').classList.remove('active');
-  document.getElementById('playerPage').classList.add('active');
-
-  const vid = document.getElementById('mainVideo');
-  vid.src = v.url;
-  vid.load();
-  vid.play().catch(() => {});
-
-  document.getElementById('playerTopTitle').textContent = v.title;
-  document.getElementById('playerTitle').textContent = v.title;
-  document.getElementById('playerMeta').textContent = `${index+1}. rész · Cloudinary`;
-  document.getElementById('epCounter').textContent = `${index+1} / ${videos.length}`;
-  document.getElementById('prevBtn').disabled = index === 0;
-  document.getElementById('nextBtn').disabled = index >= videos.length - 1;
-
-  renderHome();
-}
-
-function playRelative(d) { playAt(currentIndex + d); }
-
-function goHome() {
-  const vid = document.getElementById('mainVideo');
-  vid.pause();
-  vid.src = '';
-  document.getElementById('playerPage').classList.remove('active');
-  document.getElementById('homePage').classList.add('active');
-}
-
-// auto next
-document.getElementById('mainVideo').addEventListener('ended', () => {
-  if (currentIndex < videos.length - 1) setTimeout(() => playAt(currentIndex + 1), 600);
-});
-
-// ── UPLOAD ──
-document.getElementById('fileInput').addEventListener('change', e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  selectedFile = f;
-  const area = document.getElementById('filePickArea');
-  area.classList.add('has-file');
-  document.getElementById('filePickLabel').textContent = f.name;
-});
-
-function openModal() {
-  document.getElementById('modal').classList.add('open');
-  setTimeout(() => document.getElementById('inputTitle').focus(), 300);
-}
-
-function closeModal() {
-  if (document.getElementById('uploadBtn').disabled) return; // uploading
-  document.getElementById('modal').classList.remove('open');
-  document.getElementById('inputTitle').value = '';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('filePickLabel').textContent = 'Kattints a fájl kiválasztásához';
-  document.getElementById('filePickArea').classList.remove('has-file');
-  document.getElementById('uploadProgress').classList.remove('show');
-  document.getElementById('uploadFill').style.width = '0%';
-  selectedFile = null;
-}
-
-function closeModalOutside(e) {
-  if (e.target === document.getElementById('modal')) closeModal();
-}
-
-async function uploadVideo() {
-  const title = document.getElementById('inputTitle').value.trim();
-  if (!title) { showToast('Add meg a videó címét!'); return; }
-  if (!selectedFile) { showToast('Válassz ki egy fájlt!'); return; }
-
-  const btn = document.getElementById('uploadBtn');
-  btn.disabled = true;
-  btn.textContent = 'Feltöltés...';
-
-  document.getElementById('uploadProgress').classList.add('show');
-
-  const fd = new FormData();
-  fd.append('file', selectedFile);
-  fd.append('upload_preset', PRESET);
-  fd.append('folder', FOLDER);
-  fd.append('context', `caption=${title}`);
-  fd.append('resource_type', 'video');
-
-  try {
-    await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD}/video/upload`);
-
-      xhr.upload.onprogress = e => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          document.getElementById('uploadFill').style.width = pct + '%';
-          document.getElementById('uploadLabel').textContent = `Feltöltés... ${pct}%`;
+    // Videó betöltése funkció
+    function loadVideo(index) {
+        if (index < playlist.length) {
+            currentVideoIndex = index;
+            videoSource.src = playlist[index].src;
+            videoTitle.textContent = playlist[index].title;
+            videoPlayer.load();
+            
+            // Megpróbáljuk lejátszani (iPhone-on az első kattintás után fog működni simán)
+            videoPlayer.play().catch(error => {
+                console.log("Az automatikus lejátszást a böngésző blokkolta, kattints a lejátszásra.");
+            });
+        } else {
+            videoTitle.textContent = "Vége a lejátszási listának!";
+            videoPlayer.pause();
         }
-      };
+    }
 
-      xhr.onload = () => {
-        if (xhr.status === 200) resolve(JSON.parse(xhr.responseText));
-        else reject(new Error(xhr.responseText));
-      };
-      xhr.onerror = () => reject(new Error('Hálózati hiba'));
-      xhr.send(fd);
+    // Következő videóra ugrás gombbal
+    nextBtn.addEventListener('click', () => {
+        let nextIndex = currentVideoIndex + 1;
+        if (nextIndex < playlist.length) {
+            loadVideo(nextIndex);
+        } else {
+            // Ha az utolsó videónál járunk, újrakezdi az elsővel
+            loadVideo(0);
+        }
     });
 
-    showToast(`"${title}" sikeresen feltöltve ✓`);
-    closeModal();
-    await fetchVideos();
-  } catch(err) {
-    showToast('Feltöltési hiba! Próbáld újra.');
-    console.error(err);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Feltöltés';
-  }
-}
+    // Ha véget ér a videó, automatikusan jön a következő
+    videoPlayer.addEventListener('ended', () => {
+        let nextIndex = currentVideoIndex + 1;
+        if (nextIndex < playlist.length) {
+            loadVideo(nextIndex);
+        }
+    });
 
-// ── SYNC BAR ──
-function showSync(msg) {
-  document.getElementById('syncBar').classList.remove('hidden');
-  document.getElementById('syncMsg').textContent = msg;
-}
-function hideSync() {
-  document.getElementById('syncBar').classList.add('hidden');
-}
-
-// ── HELPERS ──
-function fmtDur(s) {
-  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2,'0')}`;
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-document.getElementById('inputTitle').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('filePickArea').click();
-});
-
-// ── INIT ──
-fetchVideos();
+    // Első videó betöltése az oldal megnyitásakor
+    loadVideo(0);
 </script>
+
 </body>
 </html>
