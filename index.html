@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Videó Lejátszó (YouTube)</title>
+    <title>Videó Lejátszó</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -27,22 +27,10 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
 
-        /* Aránytartó doboz a YouTube iframe-hez (16:9) */
-        .video-responsive {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 arány */
-            height: 0;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .video-responsive iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
+        video {
             width: 100%;
-            height: 100%;
-            border: 0;
+            display: block;
+            background: #000;
         }
 
         .controls {
@@ -60,7 +48,7 @@
         }
 
         .btn {
-            background-color: #007aff; /* iPhone kék */
+            background-color: #007aff;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -81,9 +69,10 @@
 <body>
 
 <div class="player-container">
-    <div class="video-responsive">
-        <iframe id="ytPlayer" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-    </div>
+    <video id="videoPlayer" controls playsinline autoplay muted>
+        <source id="videoSource" src="" type="video/mp4">
+        A böngésződ nem támogatja a videólejátszást.
+    </video>
 
     <div class="controls">
         <h2 id="videoTitle">Videó betöltése...</h2>
@@ -92,43 +81,51 @@
 </div>
 
 <script>
-    // 1. IDE MÁSOLD BE A YOUTUBE VIDEÓID ID-JÁT ÉS CÍMEIT!
+    // 1. IDE MÁSOLD BE A DROPBOX VAGY GOOGLE DRIVE DIREKT LINKEKET!
     const playlist = [
-        { id: "zrFoYzZbNn8", title: "1. Rész: Bevezetés" }
+        { src: "https://docs.google.com/uc?export=download&id=1NAgxbS71zGLgjAUYe8d6o1rROl0gWF2D", title: "1. Rész: Bevezetés" }
     ];
 
     let currentVideoIndex = 0;
 
-    const ytPlayer = document.getElementById('ytPlayer');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoSource = document.getElementById('videoSource');
     const videoTitle = document.getElementById('videoTitle');
     const nextBtn = document.getElementById('nextBtn');
 
-    // YouTube videó betöltése funkció
-    function loadYouTubeVideo(index) {
+    function loadVideo(index) {
         if (index < playlist.length) {
             currentVideoIndex = index;
-            
-            // playsinline=1 beállítás biztosítja, hogy iPhone-on ne ugorjon teljes képernyőre a videó kérés nélkül
-            ytPlayer.src = `https://www.youtube.com/embed/${playlist[index].id}?playsinline=1&enablejsapi=1`;
+            videoSource.src = playlist[index].src;
             videoTitle.textContent = playlist[index].title;
+            videoPlayer.load();
+            
+            videoPlayer.play().catch(error => {
+                console.log("Lejátszás elindításához koppints a képernyőre.");
+            });
         } else {
             videoTitle.textContent = "Vége a lejátszási listának!";
+            videoPlayer.pause();
         }
     }
 
-    // Következő rész gomb működése
     nextBtn.addEventListener('click', () => {
         let nextIndex = currentVideoIndex + 1;
         if (nextIndex < playlist.length) {
-            loadYouTubeVideo(nextIndex);
+            loadVideo(nextIndex);
         } else {
-            // Ha a végére ért, kezdi előlről az első videóval
-            loadYouTubeVideo(0);
+            loadVideo(0); // Újrakezdés
         }
     });
 
-    // Első videó betöltése az oldal megnyitásakor
-    loadYouTubeVideo(0);
+    videoPlayer.addEventListener('ended', () => {
+        let nextIndex = currentVideoIndex + 1;
+        if (nextIndex < playlist.length) {
+            loadVideo(nextIndex);
+        }
+    });
+
+    loadVideo(0);
 </script>
 
 </body>
