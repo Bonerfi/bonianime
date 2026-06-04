@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Videó Lejátszó</title>
+    <title>Videó Lejátszó (YouTube)</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -27,10 +27,22 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
         }
 
-        video {
-            width: 100%;
-            display: block;
+        /* Aránytartó doboz a YouTube iframe-hez (16:9) */
+        .video-responsive {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 arány */
+            height: 0;
+            overflow: hidden;
             background: #000;
+        }
+
+        .video-responsive iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
         }
 
         .controls {
@@ -48,7 +60,7 @@
         }
 
         .btn {
-            background-color: #007aff; /* iPhone kék szín */
+            background-color: #007aff; /* iPhone kék */
             color: white;
             border: none;
             padding: 12px 24px;
@@ -69,10 +81,9 @@
 <body>
 
 <div class="player-container">
-    <video id="videoPlayer" controls playsinline autoplay muted>
-        <source id="videoSource" src="" type="video/mp4">
-        A böngésződ nem támogatja a videólejátszást.
-    </video>
+    <div class="video-responsive">
+        <iframe id="ytPlayer" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
 
     <div class="controls">
         <h2 id="videoTitle">Videó betöltése...</h2>
@@ -81,59 +92,45 @@
 </div>
 
 <script>
-    // 1. IDE ÍRD BE A VIDEÓID FÁJLNEVEIT ÉS CÍMEIT!
+    // 1. IDE MÁSOLD BE A YOUTUBE VIDEÓID ID-JÁT ÉS CÍMEIT!
     const playlist = [
-        { src: "video1.mp4", title: "1. Rész: Bevezetés" },
-        { src: "video2.mp4", title: "2. Rész: A folytatás" },
-        { src: "video3.mp4", title: "3. Rész: Befejezés" }
+        { id: "dQw4w9WgXcQ", title: "1. Rész: Bevezetés" },
+        { id: "kJQP7kiw5Fk", title: "2. Rész: A folytatás" },
+        { id: "9bZkp7q19f0", title: "3. Rész: Befejezés" }
     ];
 
     let currentVideoIndex = 0;
 
-    const videoPlayer = document.getElementById('videoPlayer');
-    const videoSource = document.getElementById('videoSource');
+    const ytPlayer = document.getElementById('ytPlayer');
     const videoTitle = document.getElementById('videoTitle');
     const nextBtn = document.getElementById('nextBtn');
 
-    // Videó betöltése funkció
-    function loadVideo(index) {
+    // YouTube videó betöltése funkció
+    function loadYouTubeVideo(index) {
         if (index < playlist.length) {
             currentVideoIndex = index;
-            videoSource.src = playlist[index].src;
-            videoTitle.textContent = playlist[index].title;
-            videoPlayer.load();
             
-            // Megpróbáljuk lejátszani (iPhone-on az első kattintás után fog működni simán)
-            videoPlayer.play().catch(error => {
-                console.log("Az automatikus lejátszást a böngésző blokkolta, kattints a lejátszásra.");
-            });
+            // playsinline=1 beállítás biztosítja, hogy iPhone-on ne ugorjon teljes képernyőre a videó kérés nélkül
+            ytPlayer.src = `https://www.youtube.com/embed/${playlist[index].id}?playsinline=1&enablejsapi=1`;
+            videoTitle.textContent = playlist[index].title;
         } else {
             videoTitle.textContent = "Vége a lejátszási listának!";
-            videoPlayer.pause();
         }
     }
 
-    // Következő videóra ugrás gombbal
+    // Következő rész gomb működése
     nextBtn.addEventListener('click', () => {
         let nextIndex = currentVideoIndex + 1;
         if (nextIndex < playlist.length) {
-            loadVideo(nextIndex);
+            loadYouTubeVideo(nextIndex);
         } else {
-            // Ha az utolsó videónál járunk, újrakezdi az elsővel
-            loadVideo(0);
-        }
-    });
-
-    // Ha véget ér a videó, automatikusan jön a következő
-    videoPlayer.addEventListener('ended', () => {
-        let nextIndex = currentVideoIndex + 1;
-        if (nextIndex < playlist.length) {
-            loadVideo(nextIndex);
+            // Ha a végére ért, kezdi előlről az első videóval
+            loadYouTubeVideo(0);
         }
     });
 
     // Első videó betöltése az oldal megnyitásakor
-    loadVideo(0);
+    loadYouTubeVideo(0);
 </script>
 
 </body>
